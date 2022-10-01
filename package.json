@@ -1,0 +1,21 @@
+{
+  "name": "con2-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "keywords": [],
+  "license": "(MIT OR Apache-2.0)",
+  "author": "William Tange <will@brt.sexy> (https://brt.sexy)",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "fastify": "^4.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.7.23",
+    "typescript": "^4.8.4"
+  }
+}
