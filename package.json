@@ -9,7 +9,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "dev": "nodemon src/index.ts | pino-pretty"
   },
   "dependencies": {
     "@fastify/postgres": "^5.1.0",
@@ -21,6 +22,9 @@
   "devDependencies": {
     "@types/node": "^18.7.23",
     "@types/pg": "^8.6.5",
+    "nodemon": "^2.0.20",
+    "pino-pretty": "^9.1.0",
+    "ts-node": "^10.9.1",
     "typescript": "^4.8.4"
   }
 }
