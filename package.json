@@ -6,16 +6,21 @@
   "keywords": [],
   "license": "(MIT OR Apache-2.0)",
   "author": "William Tange <will@brt.sexy> (https://brt.sexy)",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "start": "node index.js"
+    "start": "node dist/index.js"
   },
   "dependencies": {
-    "fastify": "^4.7.0"
+    "@fastify/postgres": "^5.1.0",
+    "fastify": "^4.7.0",
+    "fastify-plugin": "^4.2.1",
+    "pg": "^8.8.0"
   },
+  "types": "index.d.ts",
   "devDependencies": {
     "@types/node": "^18.7.23",
+    "@types/pg": "^8.6.5",
     "typescript": "^4.8.4"
   }
 }
