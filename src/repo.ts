@@ -3,13 +3,13 @@ import fp from 'fastify-plugin';
 import * as Pg from 'pg';
 
 export class Repository {
-  pg: PostgresDb;
+  private pg: PostgresDb;
 
-  constructor(pg: PostgresDb) {
+  public constructor(pg: PostgresDb) {
     this.pg = pg;
   }
 
-  async trans(fn: (c: Pg.PoolClient) => any) {
+  private async trans(fn: (c: Pg.PoolClient) => any) {
     const client = await this.pg.connect();
     let data;
     try {
@@ -20,7 +20,7 @@ export class Repository {
     return data;
   }
 
-  async now() {
+  public async now() {
     return this.trans(async (c) => {
       const result = await c.query('SELECT NOW()');
       return result.rows[0];
