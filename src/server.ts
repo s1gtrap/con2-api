@@ -2,10 +2,10 @@ import fastify, { FastifyInstance, FastifyServerOptions } from 'fastify';
 
 import repo from './repo';
 
-export function build(opts: FastifyServerOptions): FastifyInstance {
+export async function build(opts: FastifyServerOptions): Promise<FastifyInstance> {
   const server = fastify(opts);
 
-  server.register(repo);
+  await server.register(repo);
 
   server.get('/ping', async (request, reply) => {
     return 'pong\n';

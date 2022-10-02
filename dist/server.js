@@ -16,11 +16,13 @@ exports.build = void 0;
 const fastify_1 = __importDefault(require("fastify"));
 const repo_1 = __importDefault(require("./repo"));
 function build(opts) {
-    const server = (0, fastify_1.default)(opts);
-    server.register(repo_1.default);
-    server.get('/ping', (request, reply) => __awaiter(this, void 0, void 0, function* () {
-        return 'pong\n';
-    }));
-    return server;
+    return __awaiter(this, void 0, void 0, function* () {
+        const server = (0, fastify_1.default)(opts);
+        yield server.register(repo_1.default);
+        server.get('/ping', (request, reply) => __awaiter(this, void 0, void 0, function* () {
+            return 'pong\n';
+        }));
+        return server;
+    });
 }
 exports.build = build;
