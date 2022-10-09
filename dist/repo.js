@@ -24,7 +24,7 @@ class Repository {
             const client = yield this.pg.connect();
             let data;
             try {
-                data = fn(client);
+                data = yield fn(client);
             }
             finally {
                 client.release();
@@ -32,11 +32,42 @@ class Repository {
             return data;
         });
     }
-    now() {
+    query(q) {
         return __awaiter(this, void 0, void 0, function* () {
-            return this.trans((c) => __awaiter(this, void 0, void 0, function* () {
-                const result = yield c.query('SELECT NOW()');
-                return result.rows[0];
+            return yield this.trans((c) => __awaiter(this, void 0, void 0, function* () { return (yield c.query(q)).rows; }));
+        });
+    }
+    token(token) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this.trans((c) => __awaiter(this, void 0, void 0, function* () {
+                const { rows } = yield c.query('SELECT * FROM tokens WHERE token=$1', [token]);
+                return rows.length === 1 ? rows[0] : null;
+            }));
+        });
+    }
+    insertInvite(token) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('dasfsdf', token);
+            return yield this.trans((c) => __awaiter(this, void 0, void 0, function* () {
+                const res = yield c.query('INSERT INTO invites (token) VALUES ($1) RETURNING EXTRACT(epoch FROM created_at)::int AS created_at', [token]);
+                return {
+                    token,
+                    createdAt: res.rows[0].created_at,
+                };
+            }));
+        });
+    }
+    insertToken(token, inviterId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this.trans((c) => __awaiter(this, void 0, void 0, function* () {
+                const res = yield c.query('INSERT INTO tokens (inviter_id, token) VALUES ($1, $2) RETURNING id, EXTRACT(epoch FROM created_at)::int AS created_at', [inviterId, token]);
+                console.log('token', res.rows[0]);
+                return {
+                    id: res.rows[0].id,
+                    inviterId,
+                    token,
+                    createdAt: res.rows[0].created_at,
+                };
             }));
         });
     }
@@ -45,6 +76,7 @@ exports.Repository = Repository;
 exports.default = (0, fastify_plugin_1.default)((fastify, opts) => __awaiter(void 0, void 0, void 0, function* () {
     fastify.register(postgres_1.default, opts);
     yield fastify.after();
-    fastify.repo = new Repository(fastify.pg);
+    yield fastify.decorate('repo', new Repository(fastify.pg));
+    yield fastify.decorateRequest('user', null);
     fastify.log.info('pg ready!');
 }), { fastify: '4.x' });

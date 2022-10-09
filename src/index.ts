@@ -1,11 +1,15 @@
 import { build } from './server'
 
 build({
-  logger: {
-    level: 'info',
-    transport: {
-      target: 'pino-pretty',
+  fastify: {
+    logger: {
+      level: 'info',
+      transport: {
+        target: 'pino-pretty',
+      },
     },
+  },
+  pg: {
   },
 }).then((server) => {
   server.listen({ port: 8080 }, (err, address) => {

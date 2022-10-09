@@ -14,14 +14,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.build = void 0;
 const fastify_1 = __importDefault(require("fastify"));
+const bearer_auth_1 = __importDefault(require("@fastify/bearer-auth"));
 const repo_1 = __importDefault(require("./repo"));
 function build(opts) {
     return __awaiter(this, void 0, void 0, function* () {
-        const server = (0, fastify_1.default)(opts);
-        yield server.register(repo_1.default);
-        server.get('/ping', (request, reply) => __awaiter(this, void 0, void 0, function* () {
-            return 'pong\n';
-        }));
+        const server = (0, fastify_1.default)(opts.fastify);
+        yield server.register(repo_1.default, opts.pg);
+        yield server.register(bearer_auth_1.default, {
+            keys: new Set([]),
+            addHook: false,
+            auth: (token, req) => __awaiter(this, void 0, void 0, function* () {
+                const user = yield server.repo.token(token);
+                req.user = user;
+                return user !== null;
+            }),
+        });
+        yield server.register(require('./routes/me'), { prefix: '/api/v1/me' });
+        yield server.register(require('./routes/invite'), { prefix: '/api/v1/invite' });
         return server;
     });
 }
