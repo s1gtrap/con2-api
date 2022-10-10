@@ -126,7 +126,7 @@ t.test('data returned by "/api/v1/invite" route', async t => {
   });
   t.equal(response.headers['content-type'], 'application/json; charset=utf-8')
   t.match(response.json(), {
-    token: /^\w{86}$/,
+    token: /^[\w-]{86}$/,
     createdAt: Number,
   });
 });

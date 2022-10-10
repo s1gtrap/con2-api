@@ -45,7 +45,6 @@ export class Repository {
   }
 
   public async insertInvite(token: string): Promise<Invite> {
-    console.log('dasfsdf', token);
     return await this.trans(async c => {
       const res = await c.query('INSERT INTO invites (token) VALUES ($1) RETURNING EXTRACT(epoch FROM created_at)::int AS created_at', [token]);
       return {
@@ -58,7 +57,6 @@ export class Repository {
   public async insertToken(token: string, inviterId?: string): Promise<Token> {
     return await this.trans(async c => {
       const res = await c.query('INSERT INTO tokens (inviter_id, token) VALUES ($1, $2) RETURNING id, EXTRACT(epoch FROM created_at)::int AS created_at', [inviterId, token]);
-      console.log('token', res.rows[0]);
       return {
         id: <string>res.rows[0].id,
         inviterId,
