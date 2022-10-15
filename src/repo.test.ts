@@ -1,5 +1,6 @@
 import t from 'tap';
 
+import * as env from './env';
 import { build } from './server';
 
 t.beforeEach(async t => {
@@ -24,17 +25,23 @@ CREATE TEMPORARY TABLE tokens (
 );
 CREATE TEMPORARY TABLE invites (
   token text PRIMARY KEY,
+  inviter_id uuid REFERENCES tokens,
   created_at timestamp DEFAULT NOW()
 );
 `);
-  await t.context.server.repo.insertToken('some-super-secret-token');
+  await t.context.server.repo.insertToken();
 });
 
 t.afterEach(async t => {
   await t.context.server.close();
 });
 
-t.test('repository insertToken', async t => {
-  const token = await t.context.server.repo.insertToken('saucy-super-secret-stuff');
-  t.equal(token.token, 'saucy-super-secret-stuff');
+t.test('insertToken', async t => {
+  const token = await t.context.server.repo.insertToken();
+  t.match(token, {
+    id: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    inviteId: null,
+    token: new RegExp(`[-\\w]{${Math.ceil(env.tokenLen/3*4)}}`),
+    createdAt: Number,
+  });
 });

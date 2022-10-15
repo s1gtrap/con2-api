@@ -1,4 +1,4 @@
-import { Repository } from './repo';
+import { Repository, Token } from './repo';
 
 declare module 'fastify' {
   export interface FastifyInstance {
@@ -6,9 +6,6 @@ declare module 'fastify' {
   }
 
   export interface FastifyRequest {
-    user: {
-      created_at: string,
-      id: string,
-    },
+    user: Token,
   }
 }

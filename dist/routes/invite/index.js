@@ -9,20 +9,32 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const typebox_1 = require("@sinclair/typebox");
 const utils_1 = require("../../utils");
 function default_1(fastify, opts) {
-    return __awaiter(this, void 0, void 0, function* () {
-        fastify.route({
-            method: 'POST',
-            url: '/',
-            preHandler: fastify.verifyBearerAuth,
-            handler: (request, reply) => __awaiter(this, void 0, void 0, function* () {
-                const invite = yield fastify.repo.insertInvite(yield (0, utils_1.genToken)(64));
-                fastify.log.info('invite', JSON.stringify(invite));
-                reply.statusCode = 204;
-                return invite;
-            }),
-        });
+    const bodyJsonSchema = typebox_1.Type.Object({
+        token: typebox_1.Type.String(),
+    });
+    fastify.get('/', {
+        schema: {
+            body: typebox_1.Type.Object({
+                token: typebox_1.Type.String(),
+            })
+        }
+    }, (req) => {
+        // The `x`, `y`, `z` types are automatically inferred
+        const { token } = req.body;
+    });
+    fastify.route({
+        method: 'POST',
+        url: '/',
+        preHandler: fastify.verifyBearerAuth,
+        handler: (request, reply) => __awaiter(this, void 0, void 0, function* () {
+            const invite = yield fastify.repo.insertInvite(yield (0, utils_1.genToken)(64));
+            fastify.log.info('invite', JSON.stringify(invite));
+            reply.statusCode = 204;
+            return invite;
+        }),
     });
 }
 exports.default = default_1;

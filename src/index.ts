@@ -1,5 +1,6 @@
 import { build } from './server'
 
+
 build({
   fastify: {
     logger: {
@@ -9,10 +10,8 @@ build({
       },
     },
   },
-  pg: {
-  },
-}).then((server) => {
-  server.listen({ port: 8080 }, (err, address) => {
+}).then(server => {
+  server.listen({ port: 8080 }, (err: Error | null, address: string) => {
     if (err) {
       console.error(err);
       process.exit(1);
