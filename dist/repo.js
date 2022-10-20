@@ -95,6 +95,14 @@ class Repository {
             }));
         });
     }
+    deleteInvite(token) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this.trans((c) => __awaiter(this, void 0, void 0, function* () {
+                const token = yield utils.genToken(env.tokenLen);
+                yield c.query('DELETE FROM invites WHERE token=$1', [token]);
+            }));
+        });
+    }
     insertToken(inviterId) {
         return __awaiter(this, void 0, void 0, function* () {
             return yield this.trans((c) => __awaiter(this, void 0, void 0, function* () {

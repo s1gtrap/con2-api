@@ -75,5 +75,27 @@ export async function build(opts: Options): Promise<Server> {
     },
   });
 
+  // /api/v1/token
+  fastify.route({
+    url: '/api/v1/token',
+    method: 'POST',
+    schema: {
+      body: Type.Object({
+        token: Type.String(),
+      }),
+    },
+    handler: async (request, reply) => {
+      const invite = await fastify.repo.selectInvite(request.body.token);
+      if (invite === null) {
+        reply.statusCode = 400;
+        throw new Error('invalid invite secret');
+      }
+      await fastify.repo.deleteInvite(request.body.token);
+      const token = await fastify.repo.insertToken(invite.inviterId);
+      reply.statusCode = 204;
+      return token;
+    },
+  });
+
   return fastify;
 }

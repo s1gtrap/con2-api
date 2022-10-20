@@ -71,6 +71,13 @@ export class Repository {
     });
   }
 
+  public async deleteInvite(token: string): Promise<void> {
+    return await this.trans(async c => {
+      const token = await utils.genToken(env.tokenLen);
+      await c.query('DELETE FROM invites WHERE token=$1', [token]);
+    });
+  }
+
   public async insertToken(inviterId?: string): Promise<Token> {
     return await this.trans(async c => {
       const token = await utils.genToken(env.tokenLen);

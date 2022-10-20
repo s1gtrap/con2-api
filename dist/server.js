@@ -68,6 +68,27 @@ function build(opts) {
                 return invite;
             }),
         });
+        // /api/v1/token
+        fastify.route({
+            url: '/api/v1/token',
+            method: 'POST',
+            schema: {
+                body: typebox_1.Type.Object({
+                    token: typebox_1.Type.String(),
+                }),
+            },
+            handler: (request, reply) => __awaiter(this, void 0, void 0, function* () {
+                const invite = yield fastify.repo.selectInvite(request.body.token);
+                if (invite === null) {
+                    reply.statusCode = 400;
+                    throw new Error('invalid invite secret');
+                }
+                yield fastify.repo.deleteInvite(request.body.token);
+                const token = yield fastify.repo.insertToken(invite.inviterId);
+                reply.statusCode = 204;
+                return token;
+            }),
+        });
         return fastify;
     });
 }
