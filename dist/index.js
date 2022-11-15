@@ -10,8 +10,11 @@ const server_1 = require("./server");
             },
         },
     },
+    pg: {
+        connectionString: process.env['DATABASE_URL'],
+    },
 }).then(server => {
-    server.listen({ port: 8080 }, (err, address) => {
+    server.listen({ port: Number(process.env['PORT']) || 8080 }, (err, address) => {
         if (err) {
             console.error(err);
             process.exit(1);

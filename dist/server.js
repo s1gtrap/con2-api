@@ -15,12 +15,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.build = void 0;
 const fastify_1 = __importDefault(require("fastify"));
 const bearer_auth_1 = __importDefault(require("@fastify/bearer-auth"));
+const cors_1 = __importDefault(require("@fastify/cors"));
 const typebox_1 = require("@sinclair/typebox");
 const repo_1 = __importDefault(require("./repo"));
 function build(opts) {
     return __awaiter(this, void 0, void 0, function* () {
         const fastify = (0, fastify_1.default)(opts.fastify).withTypeProvider();
         yield fastify
+            .register(cors_1.default, {
+            origin: 'https://tan.ge',
+        })
             .register(repo_1.default, opts.pg)
             .register(bearer_auth_1.default, {
             keys: new Set([]),
@@ -33,6 +37,12 @@ function build(opts) {
                 }
                 return false;
             }),
+        });
+        // /api/v1/status
+        fastify.get('/api/v1/status', (request, reply) => {
+            return {
+                status: 'ok!',
+            };
         });
         // /api/v1/me
         fastify.get('/api/v1/me', {
@@ -64,7 +74,6 @@ function build(opts) {
             preHandler: fastify.verifyBearerAuth,
             handler: (request, reply) => __awaiter(this, void 0, void 0, function* () {
                 const invite = yield fastify.repo.insertInvite(request.user.id);
-                reply.statusCode = 204;
                 return invite;
             }),
         });
@@ -85,7 +94,6 @@ function build(opts) {
                 }
                 yield fastify.repo.deleteInvite(request.body.token);
                 const token = yield fastify.repo.insertToken(invite.inviterId);
-                reply.statusCode = 204;
                 return token;
             }),
         });
