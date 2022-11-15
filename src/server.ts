@@ -39,6 +39,13 @@ export async function build(opts: Options): Promise<Server> {
       },
     });
 
+  // /api/v1/status
+  fastify.get('/api/v1/status', (request: FastifyRequest, reply: FastifyReply) => {
+    return {
+      status: 'ok!',
+    };
+  });
+
   // /api/v1/me
   fastify.get('/api/v1/me', {
     preHandler: fastify.verifyBearerAuth,
@@ -70,7 +77,6 @@ export async function build(opts: Options): Promise<Server> {
     preHandler: fastify.verifyBearerAuth,
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       const invite = await fastify.repo.insertInvite(request.user.id);
-      reply.statusCode = 204;
       return invite;
     },
   });
@@ -92,7 +98,6 @@ export async function build(opts: Options): Promise<Server> {
       }
       await fastify.repo.deleteInvite(request.body.token);
       const token = await fastify.repo.insertToken(invite.inviterId);
-      reply.statusCode = 204;
       return token;
     },
   });
