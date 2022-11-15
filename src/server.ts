@@ -1,6 +1,7 @@
 import Fastify, { FastifyBaseLogger, FastifyRequest, FastifyReply, FastifyInstance, FastifyServerOptions, RawServerDefault } from 'fastify'
 
 import { default as bearerAuth, FastifyBearerAuthOptions } from '@fastify/bearer-auth';
+import cors from '@fastify/cors'
 import { PostgresPluginOptions } from '@fastify/postgres';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
 
@@ -25,6 +26,9 @@ export async function build(opts: Options): Promise<Server> {
   const fastify = Fastify(opts.fastify).withTypeProvider<TypeBoxTypeProvider>();
 
   await fastify
+    .register(cors, {
+      origin: 'https://tan.ge',
+    })
     .register(repo, opts.pg)
     .register(bearerAuth, {
       keys: new Set([]),
