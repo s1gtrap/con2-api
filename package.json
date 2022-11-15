@@ -21,7 +21,8 @@
     "@fastify/type-provider-typebox": "^2.3.0",
     "fastify": "^4.7.0",
     "fastify-plugin": "^4.2.1",
-    "pg": "^8.8.0"
+    "pg": "^8.8.0",
+    "pino-pretty": "^9.1.1"
   },
   "devDependencies": {
     "@sinclair/typebox": "^0.24.44",
@@ -29,7 +30,6 @@
     "@types/pg": "^8.6.5",
     "@types/tap": "^15.0.7",
     "nodemon": "^2.0.20",
-    "pino-pretty": "^9.1.1",
     "tap": "^16.3.0",
     "ts-node": "^10.9.1",
     "typescript": "^4.8.4"
