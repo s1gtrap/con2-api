@@ -1,8 +1,6 @@
-import { Upload } from "@aws-sdk/lib-storage";
 import { CompleteMultipartUploadCommandOutput, S3Client, S3 } from "@aws-sdk/client-s3";
 
 import Fastify, { FastifyBaseLogger, FastifyRequest, FastifyReply, FastifyInstance, FastifyServerOptions, RawServerDefault } from 'fastify'
-import sharp from 'sharp';
 
 import { default as bearerAuth, FastifyBearerAuthOptions } from '@fastify/bearer-auth';
 import cors from '@fastify/cors'
@@ -17,6 +15,7 @@ import fs from 'fs';
 import path from 'path';
 
 import repo, { Stop } from './repo';
+import store, { Store } from './store';
 import * as utils from './utils';
 import { ReadableStreamBYOBRequest } from 'node:stream/web';
 
@@ -25,6 +24,7 @@ const stops: { [key: string]: Stop } = require('../data/stops.json');
 export type Options = {
   fastify?: FastifyServerOptions,
   pg?: PostgresPluginOptions,
+  store?: Store,
 }
 
 export type Server = FastifyInstance<RawServerDefault, IncomingMessage, ServerResponse, FastifyBaseLogger, TypeBoxTypeProvider>;
@@ -33,7 +33,7 @@ export async function build(opts: Options): Promise<Server> {
   const fastify = Fastify(opts.fastify).withTypeProvider<TypeBoxTypeProvider>();
 
   await fastify
-    .decorate('s3', new S3({}) || new S3Client({}))
+    .register(store, opts.store)
     .register(cors, {
       origin: 'https://tan.ge',
     })
@@ -94,7 +94,7 @@ export async function build(opts: Options): Promise<Server> {
     },
   });
 
-  // /api/v1/token
+  // POST /api/v1/token
   fastify.route({
     url: '/api/v1/token',
     method: 'POST',
@@ -111,6 +111,7 @@ export async function build(opts: Options): Promise<Server> {
       }
       await fastify.repo.deleteInvite(request.body.token);
       const token = await fastify.repo.insertToken(invite.inviterId);
+      reply.statusCode = 201;
       return token;
     },
   });
@@ -137,38 +138,26 @@ export async function build(opts: Options): Promise<Server> {
       reply.statusCode = 400;
       throw new Error('invalid stop id');
     }
+
+    const url = await fastify.store.putImage('', request.body.image);
+
+    const report = await fastify.repo.insertReport(request.user, {
+      stop: request.body.stopId,
+      image: url,
+      name: stop.name,
+      lat: stop.lat,
+      lng: stop.lng,
+    });
+
     reply.statusCode = 201;
-
-    const [, data] = utils.parseDataUrl(request.body.image);
-    const buf = await sharp(data).webp().toBuffer();
-    try {
-      const parallelUploads3 = new Upload({
-        client: fastify.s3,
-        params: { Bucket: process.env.AWS_BUCKET_NAME, Key: `${await utils.genToken(16)}.webp`, Body: buf },
-      });
-
-      parallelUploads3.on("httpUploadProgress", (progress) => {
-        fastify.log.info(progress);
-      });
-
-      const upload = <CompleteMultipartUploadCommandOutput>(await parallelUploads3.done());
-      fastify.log.warn(upload);
-      const report = await fastify.repo.insertReport(request.user, {
-        stop: request.body.stopId,
-        image: request.body.image,
-        name: stop.name,
-        lat: stop.lat,
-        lng: stop.lng,
-      });
-      return {
-        name: report.name,
-        image: upload.Location!,
-        lat: report.lat,
-        lng: report.lng,
-      };
-    } catch (e) {
-      fastify.log.error(e);
-    }
+    return {
+      id: report.id,
+      stop: request.body.stopId,
+      name: report.name,
+      image: url,
+      lat: report.lat,
+      lng: report.lng,
+    };
   });
 
   return fastify;

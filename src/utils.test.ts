@@ -25,3 +25,9 @@ t.test('genToken rejects on randomBytes calls back with error', async t => {
   });
   await t.rejects(utils.genToken());
 });
+
+t.test('parseDataUtl', async t => {
+  const [mime, data] = utils.parseDataUrl('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII');
+  t.equal(mime, 'image/png');
+  t.equal(data.toString('base64'), 'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII=');
+});

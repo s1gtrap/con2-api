@@ -3,6 +3,7 @@ import t from 'tap';
 
 import { Repository } from './repo';
 import { build } from './server';
+import { Store } from './store';
 
 async function createDb(repo: Repository) {
   await repo.query(readFileSync('migrations/tokens-1664917366.up.sql').toString().replace('CREATE TABLE', 'CREATE TEMPORARY TABLE'));
@@ -10,33 +11,12 @@ async function createDb(repo: Repository) {
   await repo.query(readFileSync('migrations/reports-1664963421.up.sql').toString().replace('CREATE TABLE', 'CREATE TEMPORARY TABLE'));
 }
 
-/*t.test('GET "/api/v1/me" route', async t => {
+t.test('GET "/api/v1/me" route', async t => {
   t.beforeEach(async t => {
     t.context.server = await build({
-      fastify: {
-        logger: {
-          level: 'info',
-          transport: {
-            target: 'pino-pretty',
-          },
-        },
-      },
       pg: { database: 'con2_test' },
     });
-    await t.context.server.repo.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE TEMPORARY TABLE tokens(
-                      id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-                      inviter_id uuid REFERENCES tokens,
-                      token text UNIQUE NOT NULL,
-                      created_at timestamp DEFAULT NOW(),
-                      deleted_at timestamp
-                    );
-CREATE TEMPORARY TABLE invites(
-                      token text PRIMARY KEY,
-                      inviter_id uuid REFERENCES tokens,
-                      created_at timestamp DEFAULT NOW()
-                    );
-  `);
+    await createDb(t.context.server.repo);
     const token = await t.context.server.repo.insertToken();
     t.context.token = token.token;
   });
@@ -106,30 +86,9 @@ CREATE TEMPORARY TABLE invites(
 t.test('GET "/api/v1/invite" route', async t => {
   t.beforeEach(async t => {
     t.context.server = await build({
-      fastify: {
-        logger: {
-          level: 'info',
-          transport: {
-            target: 'pino-pretty',
-          },
-        },
-      },
       pg: { database: 'con2_test' },
     });
-    await t.context.server.repo.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE TEMPORARY TABLE tokens(
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    inviter_id uuid REFERENCES tokens,
-    token text UNIQUE NOT NULL,
-    created_at timestamp DEFAULT NOW(),
-    deleted_at timestamp
-  );
-CREATE TEMPORARY TABLE invites(
-    token text PRIMARY KEY,
-    inviter_id uuid REFERENCES tokens,
-    created_at timestamp DEFAULT NOW()
-  );
-  `);
+    await createDb(t.context.server.repo);
     const token = await t.context.server.repo.insertToken();
     t.context.token = token;
     const invite = await t.context.server.repo.insertInvite(token.id);
@@ -176,30 +135,9 @@ CREATE TEMPORARY TABLE invites(
 t.test('POST "/api/v1/invite" route', async t => {
   t.beforeEach(async t => {
     t.context.server = await build({
-      fastify: {
-        logger: {
-          level: 'info',
-          transport: {
-            target: 'pino-pretty',
-          },
-        },
-      },
       pg: { database: 'con2_test' },
     });
-    await t.context.server.repo.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE TEMPORARY TABLE tokens(
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    inviter_id uuid REFERENCES tokens,
-    token text UNIQUE NOT NULL,
-    created_at timestamp DEFAULT NOW(),
-    deleted_at timestamp
-  );
-CREATE TEMPORARY TABLE invites(
-    token text PRIMARY KEY,
-    inviter_id uuid REFERENCES tokens,
-    created_at timestamp DEFAULT NOW()
-  );
-  `);
+    await createDb(t.context.server.repo);
     const token = await t.context.server.repo.insertToken();
     t.context.token = token.token;
   });
@@ -233,30 +171,9 @@ CREATE TEMPORARY TABLE invites(
 t.test('POST "/api/v1/token" route', async t => {
   t.beforeEach(async t => {
     t.context.server = await build({
-      fastify: {
-        logger: {
-          level: 'info',
-          transport: {
-            target: 'pino-pretty',
-          },
-        },
-      },
       pg: { database: 'con2_test' },
     });
-    await t.context.server.repo.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE TEMPORARY TABLE tokens(
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    inviter_id uuid REFERENCES tokens,
-    token text UNIQUE NOT NULL,
-    created_at timestamp DEFAULT NOW(),
-    deleted_at timestamp
-  );
-CREATE TEMPORARY TABLE invites(
-    token text PRIMARY KEY,
-    inviter_id uuid REFERENCES tokens,
-    created_at timestamp DEFAULT NOW()
-  );
-  `);
+    await createDb(t.context.server.repo);
     const token = await t.context.server.repo.insertToken();
     const invite = await t.context.server.repo.insertInvite(token.id);
     t.context.invite = invite;
@@ -286,15 +203,21 @@ CREATE TEMPORARY TABLE invites(
         token: t.context.invite.token,
       },
     });
-    t.equal(response.statusCode, 204);
+    t.equal(response.statusCode, 201);
     t.match(response.json(), {
       token: /^[-\w]{171}$/,
       createdAt: Number,
     });
   });
-});*/
+});
 
 t.test('POST "/api/v1/reports" route', async t => {
+  class MockStore implements Store {
+    public async putImage(key: string, image: string): Promise<string> {
+      return 'https://place.holder/img-url.tiff';
+    }
+  }
+
   t.beforeEach(async t => {
     t.context.server = await build({
       fastify: {
@@ -306,12 +229,12 @@ t.test('POST "/api/v1/reports" route', async t => {
         },
       },
       pg: { database: 'con2_test' },
+      store: new MockStore(),
     });
     await createDb(t.context.server.repo);
 
     const token = await t.context.server.repo.insertToken();
-    //const invite = await t.context.server.repo.insertReport(token.id, );
-    //t.context.invite = invite;
+    t.context.token = token;
   });
   t.afterEach(async t => {
     await t.context.server.close();
@@ -321,6 +244,9 @@ t.test('POST "/api/v1/reports" route', async t => {
     const response = await t.context.server.inject({
       method: 'POST',
       url: '/api/v1/reports',
+      headers: {
+        'authorization': `Bearer ${t.context.token.token} `,
+      },
       body: {
         stopId: '751415001',
         image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII',
@@ -328,8 +254,6 @@ t.test('POST "/api/v1/reports" route', async t => {
     });
     t.equal(response.statusCode, 201);
     t.match(response.json(), {
-      token: /^[-\w]{171}$/,
-      createdAt: Number,
     });
   });
 });

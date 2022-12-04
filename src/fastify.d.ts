@@ -1,11 +1,10 @@
-import { S3Client, S3 } from "@aws-sdk/client-s3";
-
 import { Repository, Token } from './repo';
+import { Store } from './store';
 
 declare module 'fastify' {
   export interface FastifyInstance {
     repo: Repository,
-    s3: S3 | S3Client,
+    store: Store,
   }
 
   export interface FastifyRequest {

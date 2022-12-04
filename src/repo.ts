@@ -27,6 +27,7 @@ export type Stop = {
 }
 
 export type Report = {
+  id?: string,
   stop: string,
   image: string,
   name: string,
