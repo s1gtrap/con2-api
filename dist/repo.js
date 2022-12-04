@@ -117,6 +117,30 @@ class Repository {
             }));
         });
     }
+    selectReports() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this.trans((c) => __awaiter(this, void 0, void 0, function* () {
+                const res = yield c.query('SELECT * FROM reports WHERE created_at >= NOW() - INTERVAL \'2 hours\'', []);
+                return res.rows;
+            }));
+        });
+    }
+    insertReport(reporter, report) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this.trans((c) => __awaiter(this, void 0, void 0, function* () {
+                const { rows } = yield c.query('INSERT INTO reports (reporter, stop, image, name, lat, lng) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id', [reporter.id, report.stop, report.image, report.name, report.lat, report.lng]);
+                return {
+                    id: rows[0].id,
+                    reporter: reporter.id,
+                    stop: report.stop,
+                    image: report.image,
+                    name: report.name,
+                    lat: report.lat,
+                    lng: report.lng,
+                };
+            }));
+        });
+    }
 }
 exports.Repository = Repository;
 exports.default = (0, fastify_plugin_1.default)((fastify, opts) => __awaiter(void 0, void 0, void 0, function* () {

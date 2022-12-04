@@ -19,6 +19,21 @@ export type Token = {
   createdAt: number,
 }
 
+export type Stop = {
+  id: string,
+  name: string,
+  lat: number,
+  lng: number,
+}
+
+export type Report = {
+  stop: string,
+  image: string,
+  name: string,
+  lat: number,
+  lng: number,
+}
+
 export class Repository {
   private pg: PostgresDb;
 
@@ -66,7 +81,7 @@ export class Repository {
       return {
         token,
         inviterId,
-        createdAt: <number>res.rows[0].created_at, 
+        createdAt: <number>res.rows[0].created_at,
       };
     });
   }
@@ -86,9 +101,35 @@ export class Repository {
         id: <string>res.rows[0].id,
         inviterId,
         token,
-        createdAt: <number>res.rows[0].created_at, 
+        createdAt: <number>res.rows[0].created_at,
       };
     });
+  }
+
+  public async selectReports(): Promise<Report[]> {
+    return await this.trans(async c => {
+      const res = await c.query('SELECT * FROM reports WHERE created_at >= NOW() - INTERVAL \'2 hours\'', []);
+
+      return res.rows;
+    });
+  }
+
+  public async insertReport(reporter: Token, report: Report): Promise<Report> {
+    return await this.trans(async c => {
+      const { rows } = await c.query(
+        'INSERT INTO reports (reporter, stop, image, name, lat, lng) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id', [reporter.id, report.stop, report.image, report.name, report.lat, report.lng],
+      );
+      return {
+        id: rows[0].id,
+        reporter: reporter.id,
+        stop: report.stop,
+        image: report.image,
+        name: report.name,
+        lat: report.lat,
+        lng: report.lng,
+      };
+    });
+
   }
 }
 
