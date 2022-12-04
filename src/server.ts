@@ -89,7 +89,7 @@ export async function build(opts: Options): Promise<Server> {
     preHandler: fastify.verifyBearerAuth,
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       const invite = await fastify.repo.insertInvite(request.user.id);
-      reply.statusCode = 204;
+      reply.statusCode = 201;
       return invite;
     },
   });
