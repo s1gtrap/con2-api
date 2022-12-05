@@ -1,4 +1,5 @@
 import { build } from './server'
+import { S3Store } from './store';
 
 
 build({

@@ -36,21 +36,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.build = void 0;
-const lib_storage_1 = require("@aws-sdk/lib-storage");
-const client_s3_1 = require("@aws-sdk/client-s3");
 const fastify_1 = __importDefault(require("fastify"));
-const sharp_1 = __importDefault(require("sharp"));
 const bearer_auth_1 = __importDefault(require("@fastify/bearer-auth"));
 const cors_1 = __importDefault(require("@fastify/cors"));
 const typebox_1 = require("@sinclair/typebox");
 const repo_1 = __importDefault(require("./repo"));
-const utils = __importStar(require("./utils"));
+const store_1 = __importStar(require("./store"));
 const stops = require('../data/stops.json');
 function build(opts) {
     return __awaiter(this, void 0, void 0, function* () {
         const fastify = (0, fastify_1.default)(opts.fastify).withTypeProvider();
         yield fastify
-            .decorate('s3', new client_s3_1.S3({}) || new client_s3_1.S3Client({}))
+            .register(store_1.default, opts.store || new store_1.S3Store(fastify.log))
             .register(cors_1.default, {
             origin: 'https://tan.ge',
         })
@@ -103,11 +100,11 @@ function build(opts) {
             preHandler: fastify.verifyBearerAuth,
             handler: (request, reply) => __awaiter(this, void 0, void 0, function* () {
                 const invite = yield fastify.repo.insertInvite(request.user.id);
-                reply.statusCode = 204;
+                reply.statusCode = 201;
                 return invite;
             }),
         });
-        // /api/v1/token
+        // POST /api/v1/token
         fastify.route({
             url: '/api/v1/token',
             method: 'POST',
@@ -124,6 +121,7 @@ function build(opts) {
                 }
                 yield fastify.repo.deleteInvite(request.body.token);
                 const token = yield fastify.repo.insertToken(invite.inviterId);
+                reply.statusCode = 201;
                 return token;
             }),
         });
@@ -148,36 +146,23 @@ function build(opts) {
                 reply.statusCode = 400;
                 throw new Error('invalid stop id');
             }
+            const url = yield fastify.store.putImage('', request.body.image);
+            const report = yield fastify.repo.insertReport(request.user, {
+                stop: request.body.stopId,
+                image: url,
+                name: stop.name,
+                lat: stop.lat,
+                lng: stop.lng,
+            });
             reply.statusCode = 201;
-            const [, data] = utils.parseDataUrl(request.body.image);
-            const buf = yield (0, sharp_1.default)(data).webp().toBuffer();
-            try {
-                const parallelUploads3 = new lib_storage_1.Upload({
-                    client: fastify.s3,
-                    params: { Bucket: process.env.AWS_BUCKET_NAME, Key: `${yield utils.genToken(16)}.webp`, Body: buf },
-                });
-                parallelUploads3.on("httpUploadProgress", (progress) => {
-                    fastify.log.info(progress);
-                });
-                const upload = (yield parallelUploads3.done());
-                fastify.log.warn(upload);
-                const report = yield fastify.repo.insertReport(request.user, {
-                    stop: request.body.stopId,
-                    image: request.body.image,
-                    name: stop.name,
-                    lat: stop.lat,
-                    lng: stop.lng,
-                });
-                return {
-                    name: report.name,
-                    image: upload.Location,
-                    lat: report.lat,
-                    lng: report.lng,
-                };
-            }
-            catch (e) {
-                fastify.log.error(e);
-            }
+            return {
+                id: report.id,
+                stop: request.body.stopId,
+                name: report.name,
+                image: url,
+                lat: report.lat,
+                lng: report.lng,
+            };
         }));
         return fastify;
     });

@@ -15,7 +15,7 @@ import fs from 'fs';
 import path from 'path';
 
 import repo, { Stop } from './repo';
-import store, { Store } from './store';
+import store, { S3Store, Store } from './store';
 import * as utils from './utils';
 import { ReadableStreamBYOBRequest } from 'node:stream/web';
 
@@ -33,7 +33,7 @@ export async function build(opts: Options): Promise<Server> {
   const fastify = Fastify(opts.fastify).withTypeProvider<TypeBoxTypeProvider>();
 
   await fastify
-    .register(store, opts.store)
+    .register(store, opts.store || new S3Store(fastify.log))
     .register(cors, {
       origin: 'https://tan.ge',
     })
