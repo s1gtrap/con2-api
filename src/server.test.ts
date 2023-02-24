@@ -11,6 +11,29 @@ async function createDb(repo: Repository) {
   await repo.query(readFileSync('migrations/reports-1664963421.up.sql').toString().replace('CREATE TABLE', 'CREATE TEMPORARY TABLE'));
 }
 
+t.test('GET "/api/v1/status" route', async t => {
+  t.beforeEach(async t => {
+    t.context.server = await build({
+      pg: { database: 'con2_test' },
+    });
+    await createDb(t.context.server.repo);
+    const token = await t.context.server.repo.insertToken();
+    t.context.token = token.token;
+  });
+  t.afterEach(async t => {
+    await t.context.server.close();
+  });
+
+  t.test('always returns ok!', async t => {
+    const response = await t.context.server.inject({
+      method: 'GET',
+      url: '/api/v1/status',
+    });
+    t.equal(response.statusCode, 200);
+    t.equal(response.body, '{"status":"ok!"}');
+  });
+});
+
 t.test('GET "/api/v1/me" route', async t => {
   t.beforeEach(async t => {
     t.context.server = await build({
