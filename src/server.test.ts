@@ -175,7 +175,7 @@ t.test('POST "/api/v1/invite" route', async t => {
     });
     t.equal(res.statusCode, 401);
   });
-  t.test('returns 204 response status code', async t => {
+  t.test('returns 201 response status code', async t => {
     const response = await t.context.server.inject({
       method: 'POST',
       headers: {
@@ -183,7 +183,7 @@ t.test('POST "/api/v1/invite" route', async t => {
       },
       url: '/api/v1/invite',
     });
-    t.equal(response.statusCode, 204);
+    t.equal(response.statusCode, 201);
     t.match(response.json(), {
       token: /^[-\w]{86}$/,
       createdAt: Number,
