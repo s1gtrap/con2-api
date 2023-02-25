@@ -369,7 +369,13 @@ t.test('POST "/api/v1/reports" route', async t => {
       },
     });
     t.equal(response.statusCode, 201);
-    t.match(response.json(), {
-    });
+    t.same(response.json(), {
+      id: 1,
+      stop: "751415001",
+      name: "Klostertorvet (Aarhus Kom)",
+      image: "https://place.holder/img-url.tiff",
+      lat: 56.15844582662525,
+      lng: 10.205799212638949,
+   });
   });
 });
