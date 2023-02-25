@@ -234,6 +234,99 @@ t.test('POST "/api/v1/token" route', async t => {
   });
 });
 
+t.test('GET "/api/v1/reports" route', async t => {
+  t.beforeEach(async t => {
+    t.context.server = await build({
+      fastify: {
+        logger: {
+          level: 'error',
+          transport: {
+            target: 'pino-pretty',
+          },
+        },
+      },
+      pg: { database: 'con2_test' },
+    });
+    await createDb(t.context.server.repo);
+
+    const token = await t.context.server.repo.insertToken();
+    t.context.token = token;
+  });
+  t.afterEach(async t => {
+    await t.context.server.close();
+  });
+
+  t.test('should reject lack of token', async t => {
+    const response = await t.context.server.inject({
+      method: 'GET',
+      url: '/api/v1/reports',
+    });
+    t.equal(response.statusCode, 401);
+    t.deepEqual(response.json(), {
+      statusCode: 401,
+      error: 'Unauthorized',
+      message: 'missing authorization header',
+    });
+  });
+  t.test('should reject invalid token', async t => {
+    const response = await t.context.server.inject({
+      method: 'GET',
+      url: '/api/v1/reports',
+      headers: {
+        'authorization': 'Bearer dummy-text',
+      },
+    });
+    t.equal(response.statusCode, 401);
+    t.deepEqual(response.json(), {
+      statusCode: 401,
+      error: 'Unauthorized',
+      message: 'invalid authorization header',
+    });
+  });
+  t.test('accepts valid request returns empty array', async t => {
+    const response = await t.context.server.inject({
+      method: 'GET',
+      url: '/api/v1/reports',
+      headers: {
+        'authorization': `Bearer ${t.context.token.token} `,
+      },
+    });
+    t.equal(response.statusCode, 200);
+    t.match(response.json(), []);
+  });
+  t.test('accepts valid request returns reports', async t => {
+    await t.context.server.repo.insertReport(t.context.token, {
+      stop: '2',
+      image: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+      name: 'Engelsborgvej (Buddingevej)',
+      lat: 55.767248495180645,
+      lng: 12.498017557502143,
+    });
+
+    const response = await t.context.server.inject({
+      method: 'GET',
+      url: '/api/v1/reports',
+      headers: {
+        'authorization': `Bearer ${t.context.token.token} `,
+      },
+    });
+    t.equal(response.statusCode, 200);
+    t.equal(response.json().length, 1);
+    t.match(response.json(), [
+      {
+        id: Number,
+        reporter: t.context.token.id,
+        stop: '2',
+        image: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+        name: 'Engelsborgvej (Buddingevej)',
+        lat: 55.76725,
+        lng: 12.498017,
+        created_at: String,
+      },
+    ]);
+  });
+});
+
 t.test('POST "/api/v1/reports" route', async t => {
   class MockStore implements Store {
     public async putImage(key: string, image: string): Promise<string> {
