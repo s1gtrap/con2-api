@@ -262,7 +262,7 @@ t.test('GET "/api/v1/reports" route', async t => {
       url: '/api/v1/reports',
     });
     t.equal(response.statusCode, 401);
-    t.deepEqual(response.json(), {
+    t.same(response.json(), {
       statusCode: 401,
       error: 'Unauthorized',
       message: 'missing authorization header',
@@ -277,7 +277,7 @@ t.test('GET "/api/v1/reports" route', async t => {
       },
     });
     t.equal(response.statusCode, 401);
-    t.deepEqual(response.json(), {
+    t.same(response.json(), {
       statusCode: 401,
       error: 'Unauthorized',
       message: 'invalid authorization header',
